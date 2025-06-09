@@ -19,6 +19,7 @@ export default function SpeechToText() {
   const [status, setStatus] = useState<RecognitionStatus>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   const [shouldRestart, setShouldRestart] = useState(false);
+  const [isTranscriptCompleted, setIsTranscriptCompleted] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
@@ -57,10 +58,19 @@ export default function SpeechToText() {
           
           // 新しく確定されたテキストがある場合のみ追加
           if (finalText) {
-            setTranscript(prev => prev + finalText);
+            // 前回の文字起こしが完了していた場合は置き換え、そうでなければ追加
+            if (isTranscriptCompleted) {
+              setTranscript(finalText);
+              setIsTranscriptCompleted(false);
+            } else {
+              setTranscript(prev => prev + finalText);
+            }
+            
             // 確定後、短時間successを表示してからlisteningに戻る
             setStatus('success');
             setStatusMessage('文字起こし完了');
+            setIsTranscriptCompleted(true);
+            
             setTimeout(() => {
               if (shouldRestart && isRecording) {
                 setStatus('listening');
@@ -136,6 +146,7 @@ export default function SpeechToText() {
         
         recognitionRef.current = recognition;
         setShouldRestart(true); // 自動再開を有効にする
+        setIsTranscriptCompleted(false); // 録音開始時にリセット
         recognition.start();
         return;
       }
@@ -248,6 +259,7 @@ export default function SpeechToText() {
     setStatus('idle');
     setStatusMessage('');
     setShouldRestart(false);
+    setIsTranscriptCompleted(false);
     
     // タイムアウトをクリア
     if (restartTimeoutRef.current) {

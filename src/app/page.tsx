@@ -1,103 +1,84 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+            音声処理アプリケーション
+          </h1>
+          <p className="text-lg text-gray-600">
+            音声とテキストの相互変換を行うWebアプリケーション
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🎤</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                音声文字起こし
+              </h2>
+              <p className="text-gray-600 mb-6">
+                音声をリアルタイムでテキストに変換します。マイクを使って話すだけで、自動的に文字起こしを行います。
+              </p>
+              <Link
+                href="/speech-to-text"
+                className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+              >
+                音声文字起こしを開始
+              </Link>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🔊</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                テキスト音声変換
+              </h2>
+              <p className="text-gray-600 mb-6">
+                入力したテキストを自然な音声に変換します。音声の速度やピッチを調整して、お好みの音声を生成できます。
+              </p>
+              <Link
+                href="/text-to-speech"
+                className="inline-block bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700 transition-colors"
+              >
+                テキスト音声変換を開始
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              主な機能
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+              <div>
+                <h4 className="font-medium text-gray-800 mb-2">音声文字起こし</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• リアルタイム音声認識</li>
+                  <li>• 連続録音機能</li>
+                  <li>• 日本語対応</li>
+                  <li>• 自動再開機能</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-800 mb-2">テキスト音声変換</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• 自然な音声合成</li>
+                  <li>• 音声設定調整</li>
+                  <li>• 複数音声選択</li>
+                  <li>• 音声ファイル保存</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

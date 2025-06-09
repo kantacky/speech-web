@@ -9,11 +9,15 @@ declare global {
   }
 }
 
+type RecognitionStatus = 'idle' | 'listening' | 'processing' | 'success' | 'error';
+
 export default function SpeechToText() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [status, setStatus] = useState<RecognitionStatus>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
@@ -31,6 +35,8 @@ export default function SpeechToText() {
         
         recognition.onstart = () => {
           setIsRecording(true);
+          setStatus('listening');
+          setStatusMessage('音声を聞いています...');
         };
         
         recognition.onresult = (event) => {
@@ -49,21 +55,34 @@ export default function SpeechToText() {
           // 新しく確定されたテキストがある場合のみ追加
           if (finalText) {
             setTranscript(prev => prev + finalText);
+            setStatus('success');
+            setStatusMessage('文字起こし完了');
           }
           
           // 中間結果を更新
           setInterimTranscript(interimText);
+          
+          // 中間結果がある場合は処理中状態
+          if (interimText && !finalText) {
+            setStatus('processing');
+            setStatusMessage('音声を認識中...');
+          }
         };
         
         recognition.onerror = (event) => {
           console.error('Speech recognition error:', event.error);
           setIsRecording(false);
-          alert('音声認識エラー: ' + event.error);
+          setStatus('error');
+          setStatusMessage(`音声認識エラー: ${event.error}`);
         };
         
         recognition.onend = () => {
           setIsRecording(false);
           setInterimTranscript(''); // 録音終了時に中間結果をクリア
+          if (status !== 'error') {
+            setStatus('idle');
+            setStatusMessage('');
+          }
         };
         
         recognitionRef.current = recognition;
@@ -168,6 +187,28 @@ export default function SpeechToText() {
   const clearTranscript = () => {
     setTranscript('');
     setInterimTranscript('');
+    setStatus('idle');
+    setStatusMessage('');
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'listening': return 'text-blue-600';
+      case 'processing': return 'text-yellow-600';
+      case 'success': return 'text-green-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'listening': return '🎤';
+      case 'processing': return '⏳';
+      case 'success': return '✅';
+      case 'error': return '❌';
+      default: return '💬';
+    }
   };
 
   return (
@@ -205,16 +246,16 @@ export default function SpeechToText() {
               </button>
             </div>
             
-            {isProcessing && (
-              <div className="text-blue-600 font-medium">
-                音声を文字起こし中...
-              </div>
-            )}
-            
-            {isRecording && (
-              <div className="flex items-center space-x-2 text-red-600">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span>録音中</span>
+            {status !== 'idle' && (
+              <div className={`flex items-center space-x-2 font-medium ${getStatusColor()}`}>
+                <span className="text-lg">{getStatusIcon()}</span>
+                <span>{statusMessage}</span>
+                {status === 'listening' && (
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                )}
+                {status === 'processing' && (
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-spin border-2 border-transparent border-t-yellow-600"></div>
+                )}
               </div>
             )}
           </div>
@@ -222,26 +263,45 @@ export default function SpeechToText() {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">
-              文字起こし結果
-            </h2>
+            <div className="flex items-center space-x-3">
+              <h2 className="text-xl font-semibold text-gray-800">
+                文字起こし結果
+              </h2>
+              {status !== 'idle' && (
+                <div className={`flex items-center space-x-1 text-sm ${getStatusColor()}`}>
+                  <span>{getStatusIcon()}</span>
+                  <span className="font-medium">{statusMessage}</span>
+                </div>
+              )}
+            </div>
             <button
               onClick={clearTranscript}
-              className="px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded"
+              className="px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
               disabled={!transcript && !interimTranscript}
             >
               クリア
             </button>
           </div>
-          <div className="bg-gray-50 rounded p-4 min-h-[100px]">
+          <div className={`rounded p-4 min-h-[100px] border-2 ${
+            status === 'error' ? 'bg-red-50 border-red-200' :
+            status === 'success' ? 'bg-green-50 border-green-200' :
+            status === 'processing' ? 'bg-yellow-50 border-yellow-200' :
+            status === 'listening' ? 'bg-blue-50 border-blue-200' :
+            'bg-gray-50 border-gray-200'
+          }`}>
             <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
               {transcript}
               {interimTranscript && (
-                <span className="text-gray-500 italic">{interimTranscript}</span>
+                <span className="text-blue-600 italic bg-blue-100 px-1 rounded">
+                  {interimTranscript}
+                </span>
               )}
             </p>
             {!transcript && !interimTranscript && (
-              <p className="text-gray-400 italic">音声認識を開始してください...</p>
+              <p className="text-gray-400 italic flex items-center space-x-2">
+                <span>🎤</span>
+                <span>音声認識を開始してください...</span>
+              </p>
             )}
           </div>
         </div>

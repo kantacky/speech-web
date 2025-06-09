@@ -12,9 +12,11 @@ declare global {
 export default function SpeechToText() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<any>(null);
 
   const startRecording = async () => {
     try {
@@ -32,19 +34,22 @@ export default function SpeechToText() {
         };
         
         recognition.onresult = (event) => {
-          let finalTranscript = '';
-          let interimTranscript = '';
+          let finalText = '';
+          let interimText = '';
           
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
+          for (let i = 0; i < event.results.length; i++) {
+            const transcriptPart = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              finalTranscript += transcript;
+              finalText += transcriptPart;
             } else {
-              interimTranscript += transcript;
+              interimText += transcriptPart;
             }
           }
           
-          setTranscript(prev => prev + finalTranscript);
+          if (finalText) {
+            setTranscript(prev => prev + finalText);
+          }
+          setInterimTranscript(interimText);
         };
         
         recognition.onerror = (event) => {
@@ -57,6 +62,7 @@ export default function SpeechToText() {
           setIsRecording(false);
         };
         
+        recognitionRef.current = recognition;
         recognition.start();
         return;
       }
@@ -89,9 +95,9 @@ export default function SpeechToText() {
 
   const stopRecording = () => {
     // Web Speech APIを使用している場合
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      // recognition.stop() は onend イベントで自動的に setIsRecording(false) される
-      setIsRecording(false);
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setInterimTranscript('');
       return;
     }
 
@@ -157,6 +163,7 @@ export default function SpeechToText() {
 
   const clearTranscript = () => {
     setTranscript('');
+    setInterimTranscript('');
   };
 
   return (
@@ -209,7 +216,7 @@ export default function SpeechToText() {
           </div>
         </div>
 
-        {transcript && (
+        {(transcript || interimTranscript) && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -223,8 +230,9 @@ export default function SpeechToText() {
               </button>
             </div>
             <div className="bg-gray-50 rounded p-4 min-h-[100px]">
-              <p className="text-gray-800 leading-relaxed">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                 {transcript}
+                <span className="text-gray-500 italic">{interimTranscript}</span>
               </p>
             </div>
           </div>

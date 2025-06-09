@@ -18,9 +18,11 @@ export default function SpeechToText() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<RecognitionStatus>('idle');
   const [statusMessage, setStatusMessage] = useState('');
+  const [shouldRestart, setShouldRestart] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
+  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const startRecording = async () => {
     try {
@@ -32,6 +34,7 @@ export default function SpeechToText() {
         recognition.lang = 'ja-JP';
         recognition.continuous = true;
         recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
         
         recognition.onstart = () => {
           setIsRecording(true);
@@ -71,21 +74,61 @@ export default function SpeechToText() {
         
         recognition.onerror = (event) => {
           console.error('Speech recognition error:', event.error);
+          
+          // no-speechエラーの場合は自動的に再開を試行
+          if (event.error === 'no-speech' && shouldRestart) {
+            console.log('No speech detected, will restart...');
+            setStatus('listening');
+            setStatusMessage('音声を待機中...');
+            // onendイベントで自動的に再開される
+            return;
+          }
+          
+          // その他のエラーの場合は停止
           setIsRecording(false);
+          setShouldRestart(false);
           setStatus('error');
           setStatusMessage(`音声認識エラー: ${event.error}`);
+          
+          // タイムアウトをクリア
+          if (restartTimeoutRef.current) {
+            clearTimeout(restartTimeoutRef.current);
+            restartTimeoutRef.current = null;
+          }
         };
         
         recognition.onend = () => {
-          setIsRecording(false);
+          console.log('Recognition ended, shouldRestart:', shouldRestart);
           setInterimTranscript(''); // 録音終了時に中間結果をクリア
-          if (status !== 'error') {
-            setStatus('idle');
-            setStatusMessage('');
+          
+          // エラーでない場合、かつshouldRestartがtrueの場合は自動的に再開
+          if (shouldRestart && status !== 'error') {
+            restartTimeoutRef.current = setTimeout(() => {
+              if (shouldRestart && recognitionRef.current) {
+                try {
+                  console.log('Restarting recognition...');
+                  recognitionRef.current.start();
+                } catch (error) {
+                  console.error('Failed to restart recognition:', error);
+                  setIsRecording(false);
+                  setShouldRestart(false);
+                  setStatus('error');
+                  setStatusMessage('音声認識の再開に失敗しました');
+                }
+              }
+            }, 100); // 短い遅延で再開
+          } else {
+            setIsRecording(false);
+            setShouldRestart(false);
+            if (status !== 'error') {
+              setStatus('idle');
+              setStatusMessage('');
+            }
           }
         };
         
         recognitionRef.current = recognition;
+        setShouldRestart(true); // 自動再開を有効にする
         recognition.start();
         return;
       }
@@ -117,6 +160,14 @@ export default function SpeechToText() {
   };
 
   const stopRecording = () => {
+    setShouldRestart(false); // 自動再開を無効にする
+    
+    // タイムアウトをクリア
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
+    
     // Web Speech APIを使用している場合
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -189,6 +240,13 @@ export default function SpeechToText() {
     setInterimTranscript('');
     setStatus('idle');
     setStatusMessage('');
+    setShouldRestart(false);
+    
+    // タイムアウトをクリア
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
   };
 
   const getStatusColor = () => {

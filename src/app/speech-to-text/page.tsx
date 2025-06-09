@@ -58,8 +58,15 @@ export default function SpeechToText() {
           // 新しく確定されたテキストがある場合のみ追加
           if (finalText) {
             setTranscript(prev => prev + finalText);
+            // 確定後、短時間successを表示してからlisteningに戻る
             setStatus('success');
             setStatusMessage('文字起こし完了');
+            setTimeout(() => {
+              if (shouldRestart && isRecording) {
+                setStatus('listening');
+                setStatusMessage('音声を聞いています...');
+              }
+            }, 500);
           }
           
           // 中間結果を更新
@@ -116,7 +123,7 @@ export default function SpeechToText() {
                   setStatusMessage('音声認識の再開に失敗しました');
                 }
               }
-            }, 50); // より短い遅延で再開
+            }, 100); // 短い遅延で再開
           } else {
             setIsRecording(false);
             setShouldRestart(false);

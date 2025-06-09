@@ -116,7 +116,7 @@ export default function SpeechToText() {
                   setStatusMessage('音声認識の再開に失敗しました');
                 }
               }
-            }, 100); // 短い遅延で再開
+            }, 50); // より短い遅延で再開
           } else {
             setIsRecording(false);
             setShouldRestart(false);

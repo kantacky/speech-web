@@ -37,7 +37,7 @@ export default function SpeechToText() {
           let finalText = '';
           let interimText = '';
           
-          for (let i = 0; i < event.results.length; i++) {
+          for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcriptPart = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
               finalText += transcriptPart;
@@ -46,9 +46,12 @@ export default function SpeechToText() {
             }
           }
           
+          // 新しく確定されたテキストがある場合のみ追加
           if (finalText) {
             setTranscript(prev => prev + finalText);
           }
+          
+          // 中間結果を更新
           setInterimTranscript(interimText);
         };
         
@@ -60,6 +63,7 @@ export default function SpeechToText() {
         
         recognition.onend = () => {
           setIsRecording(false);
+          setInterimTranscript(''); // 録音終了時に中間結果をクリア
         };
         
         recognitionRef.current = recognition;
@@ -216,27 +220,31 @@ export default function SpeechToText() {
           </div>
         </div>
 
-        {(transcript || interimTranscript) && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">
-                文字起こし結果
-              </h2>
-              <button
-                onClick={clearTranscript}
-                className="px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded"
-              >
-                クリア
-              </button>
-            </div>
-            <div className="bg-gray-50 rounded p-4 min-h-[100px]">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                {transcript}
-                <span className="text-gray-500 italic">{interimTranscript}</span>
-              </p>
-            </div>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              文字起こし結果
+            </h2>
+            <button
+              onClick={clearTranscript}
+              className="px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded"
+              disabled={!transcript && !interimTranscript}
+            >
+              クリア
+            </button>
           </div>
-        )}
+          <div className="bg-gray-50 rounded p-4 min-h-[100px]">
+            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+              {transcript}
+              {interimTranscript && (
+                <span className="text-gray-500 italic">{interimTranscript}</span>
+              )}
+            </p>
+            {!transcript && !interimTranscript && (
+              <p className="text-gray-400 italic">音声認識を開始してください...</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
